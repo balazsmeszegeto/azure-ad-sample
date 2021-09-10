@@ -6,7 +6,12 @@
 <body>
     You are logged in as <em>@Model.Email</em>. @Html.ActionLink("Log out", "Logout") <br/>
 
-    Organization:
-    <pre>@Model.Organization</pre>
+    <dl>
+        @foreach (var claim in Model.Claims)
+        {
+            <dt>@claim.Type</dt>
+            <dd>@claim.Value</dd>
+        }
+    </dl>
 </body>
 </html>

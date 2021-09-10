@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -7,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Mvc;
 
 namespace azuread_sample
@@ -20,39 +22,43 @@ namespace azuread_sample
             _httpClient = httpClient;
         }
 
-        [HttpGet("~/"), ActionName("Home")]
-        public async Task<IActionResult> HomeAsync()
+        [HttpGet("~/")]
+        public IActionResult Home()
         {
             if (!User?.Identities.Any(identity => identity.IsAuthenticated) ?? false)
             {
                 return View("NotLoggedIn");
             }
 
-            var email = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
+            var email = User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email)?.Value;
 
+            return View("LoggedIn", new LoggedInModel { Email = email, Claims = User.Claims });
+        }
+
+        private async Task<string> GetOrganization()
+        {
             var at = await HttpContext.GetTokenAsync(MicrosoftAccountDefaults.AuthenticationScheme, "access_token");
-            var orgFormatted = string.Empty;
-            if (at is not null)
+            if (at is null)
             {
-                var request = new HttpRequestMessage(HttpMethod.Get, "https://graph.microsoft.com/v1.0/organization");
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", at);
-                var resp = await _httpClient.SendAsync(request);
-                var organization = await resp.Content.ReadAsStringAsync();
-
-                var doc = JsonDocument.Parse(organization);
-                orgFormatted = JsonSerializer.Serialize(doc, new JsonSerializerOptions { WriteIndented = true });
-
-                // request = new HttpRequestMessage(HttpMethod.Get, "https://graph.microsoft.com/v1.0/users"); requires User.Read.All
+                return string.Empty;
             }
 
-            return View("LoggedIn", new LoggedInModel { Email = email, Organization = orgFormatted });
+            var request = new HttpRequestMessage(HttpMethod.Get, "https://graph.microsoft.com/v1.0/organization");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", at);
+            var resp = await _httpClient.SendAsync(request);
+            var organization = await resp.Content.ReadAsStringAsync();
+
+            var doc = JsonDocument.Parse(organization);
+            return JsonSerializer.Serialize(doc, new JsonSerializerOptions { WriteIndented = true });
+
+            // request = new HttpRequestMessage(HttpMethod.Get, "https://graph.microsoft.com/v1.0/users"); requires User.Read.All
         }
 
         [HttpGet("~/login")]
         public IActionResult Login([FromQuery] string prompt)
         {
             // By default the client will be redirect back to the URL that issued the challenge (/login), send them to the home page instead (/).
-            var properties = new MicrosoftChallengeProperties { RedirectUri = "/" };
+            var properties = new OpenIdConnectChallengeProperties { RedirectUri = "/" };
             if (prompt == "login" || prompt == "consent")
             {
                 properties.Prompt = prompt;
