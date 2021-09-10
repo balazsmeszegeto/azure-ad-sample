@@ -1,0 +1,7 @@
+<html>
+<body>
+    @Html.ActionLink("Login", "Login") <br>
+    @Html.ActionLink("Login, force consent", "Login", routeValues: new { prompt = "consent"}) <br>
+    @Html.ActionLink("Login, force login", "Login", routeValues: new { prompt = "login"}) <br>
+</body>
+</html>
