@@ -5,7 +5,7 @@ namespace azuread_sample
 {
     public class LoggedInModel
     {
-        public string Email { get; set; }
+        public string Upn { get; set; }
         public IEnumerable<Claim> Claims { get; set; }
     }
 }

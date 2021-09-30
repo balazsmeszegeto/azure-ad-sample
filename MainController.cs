@@ -30,9 +30,10 @@ namespace azuread_sample
                 return View("NotLoggedIn");
             }
 
-            var email = User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email)?.Value;
+            // var email = User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email)?.Value;
+            var upn = User.Claims.FirstOrDefault(c => c.Type == "upn")?.Value;
 
-            return View("LoggedIn", new LoggedInModel { Email = email, Claims = User.Claims });
+            return View("LoggedIn", new LoggedInModel { Upn = upn, Claims = User.Claims });
         }
 
         private async Task<string> GetOrganization()
